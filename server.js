@@ -28,7 +28,7 @@ const newMessageSchema = Joi.object({
     to: Joi.string().required(),
     text: Joi.string().required(),
     type: Joi.string().pattern(/^(private_message|message)$/),
-    time: Joi.any()
+    time: Joi.any(),
 });
 
 // STARTING SERVER
@@ -90,11 +90,22 @@ app.post("/participants", async (req, res) => {
 // MESSAGES ROUTE
 
 app.get("/messages", async (req, res) => {
+    const limit = parseInt(req.query.limit);
+
     try {
+        if (limit) {
+            const messages = await db
+                .collection("messages")
+                .find({}, { limit, sort: { time: -1 } })
+                .toArray();
+            res.send([...messages].reverse());
+            return;
+        }
         const messages = await db.collection("messages").find().toArray();
         res.send(messages);
+        return;
     } catch (error) {
-        res.send(500);
+        res.sendStatus(500);
     }
 });
 
