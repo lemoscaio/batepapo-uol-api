@@ -135,6 +135,14 @@ app.get("/messages", async (req, res) => {
 
 app.post("/messages", async (req, res) => {
     const { user } = req.headers;
+    
+    const userExists = await db.collection("users").findOne({ name: user });
+
+    if (!userExists) {
+        res.sendStatus(422);
+        return;
+    }
+
     const newMessage = {
         ...req.body,
         from: user,
@@ -163,7 +171,6 @@ app.post("/status", async (req, res) => {
     const { user } = req.headers;
 
     const foundUser = await db.collection("users").findOne({ name: user });
-    console.log(foundUser);
 
     if (!foundUser) {
         res.sendStatus(404);
@@ -179,6 +186,8 @@ app.post("/status", async (req, res) => {
 
     res.send(200);
 });
+
+// FUNCTIONS
 
 (function checkActiveUsers() {
     setInterval(async () => {
