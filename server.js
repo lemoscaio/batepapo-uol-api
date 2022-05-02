@@ -4,6 +4,8 @@ import cors from "cors";
 import Joi from "joi";
 import dotenv from "dotenv";
 import dayjs from "dayjs";
+import { strict as assert } from "assert";
+import { stripHtml } from "string-strip-html";
 dotenv.config();
 
 const app = express();
@@ -22,7 +24,6 @@ const newParticipantSchema = Joi.object({
     name: Joi.string().required(),
 });
 
-// TODO changes "from" to validate if user is in users list
 const newMessageSchema = Joi.object({
     from: Joi.string().required(),
     to: Joi.string().required(),
@@ -49,7 +50,7 @@ app.get("/participants", async (req, res) => {
 });
 
 app.post("/participants", async (req, res) => {
-    const newParticipant = req.body;
+    const newParticipant = cleanHTML(req.body);
 
     try {
         await newParticipantSchema.validateAsync(newParticipant, {
@@ -67,6 +68,10 @@ app.post("/participants", async (req, res) => {
     if (user) {
         res.sendStatus(409);
         return;
+    }
+
+    if (!newParticipant.name) {
+        res.sendStatus(400);
     }
 
     const registerUserMessage = {
@@ -96,8 +101,8 @@ app.post("/participants", async (req, res) => {
 // MESSAGES ROUTE
 
 app.get("/messages", async (req, res) => {
-    const limit = parseInt(req.query.limit);
-    const { user } = req.headers;
+    const limit = parseInt(cleanHTML(req.query.limit));
+    const { user } = cleanHTML(req.headers);
 
     let messages = [];
     // TODO fix bug where lastest messages don't appear if it's after midnight
@@ -134,7 +139,7 @@ app.get("/messages", async (req, res) => {
 });
 
 app.post("/messages", async (req, res) => {
-    const { user } = req.headers;
+    const { user } = cleanHTML(req.headers);
 
     const userExists = await db.collection("users").findOne({ name: user });
 
@@ -144,7 +149,7 @@ app.post("/messages", async (req, res) => {
     }
 
     const newMessage = {
-        ...req.body,
+        ...cleanHTML(req.body),
         from: user,
         time: dayjs().format("HH:mm:ss"),
     };
@@ -167,8 +172,8 @@ app.post("/messages", async (req, res) => {
 });
 
 app.delete("/messages/:messageId", async (req, res) => {
-    const { messageId } = req.params;
-    const { user } = req.headers;
+    const { messageId } = cleanHTML(req.params);
+    const { user } = cleanHTML(req.headers);
 
     let message;
     try {
@@ -203,9 +208,9 @@ app.delete("/messages/:messageId", async (req, res) => {
 });
 
 app.put("/messages/:messageId", async (req, res) => {
-    const { messageId } = req.params;
-    const { user } = req.headers;
-    
+    const { messageId } = cleanHTML(req.params);
+    const { user } = cleanHTML(req.headers);
+
     const userExists = await db.collection("users").findOne({ name: user });
 
     if (!userExists) {
@@ -214,7 +219,7 @@ app.put("/messages/:messageId", async (req, res) => {
     }
 
     const editedMessage = {
-        ...req.body,
+        ...cleanHTML(req.body),
         from: user,
     };
 
@@ -267,7 +272,7 @@ app.put("/messages/:messageId", async (req, res) => {
 // STATUS ROUTE
 
 app.post("/status", async (req, res) => {
-    const { user } = req.headers;
+    const { user } = cleanHTML(req.headers);
 
     const foundUser = await db.collection("users").findOne({ name: user });
 
@@ -290,7 +295,7 @@ app.post("/status", async (req, res) => {
 
 (function checkActiveUsers() {
     setInterval(async () => {
-        const users = await db
+        await db
             .collection("users")
             .find()
             .forEach(async (user) => {
@@ -315,3 +320,22 @@ app.post("/status", async (req, res) => {
             });
     }, 15000);
 })();
+
+function cleanHTML(variable) {
+
+    if (typeof variable === "object") {
+        for (let key in variable) {
+            try {
+                variable[key] = stripHtml(variable[key]).result.trim();
+            } catch (err) {
+                break;
+            }
+        }
+
+        return variable;
+    }
+
+    if (typeof variable === "string") {
+        return stripHtml(variable).result.trim();
+    }
+}
