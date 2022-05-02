@@ -107,8 +107,6 @@ app.get("/messages", async (req, res) => {
     const { user } = cleanHTML(req.headers);
 
     let messages = [];
-    // TODO fix bug where lastest messages don't appear if it's after midnight
-    // TODO use timestamp of miliseconds to determine the order of the messages
     try {
         if (limit) {
             messages = await db
