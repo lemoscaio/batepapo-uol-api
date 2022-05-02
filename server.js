@@ -30,6 +30,7 @@ const newMessageSchema = Joi.object({
     text: Joi.string().required(),
     type: Joi.string().pattern(/^(private_message|message)$/),
     time: Joi.any(),
+    _time: Joi.any(),
 });
 
 // STARTING SERVER
@@ -80,6 +81,7 @@ app.post("/participants", async (req, res) => {
         text: "entra na sala...",
         type: "status",
         time: dayjs().format("HH:mm:ss"),
+        _time: Date.now(),
     };
 
     try {
@@ -106,11 +108,12 @@ app.get("/messages", async (req, res) => {
 
     let messages = [];
     // TODO fix bug where lastest messages don't appear if it's after midnight
+    // TODO use timestamp of miliseconds to determine the order of the messages
     try {
         if (limit) {
             messages = await db
                 .collection("messages")
-                .find({}, { limit, sort: { time: -1 } })
+                .find({}, { limit, sort: { _time: -1 } })
                 .toArray();
         } else {
             messages = await db.collection("messages").find().toArray();
@@ -152,6 +155,7 @@ app.post("/messages", async (req, res) => {
         ...cleanHTML(req.body),
         from: user,
         time: dayjs().format("HH:mm:ss"),
+        _time: Date.now(),
     };
 
     try {
@@ -310,6 +314,7 @@ app.post("/status", async (req, res) => {
                             text: "sai da sala...",
                             type: "status",
                             time: dayjs().format("HH:mm:ss"),
+                            _time: Date.now(),
                         };
 
                         await db
@@ -322,7 +327,6 @@ app.post("/status", async (req, res) => {
 })();
 
 function cleanHTML(variable) {
-
     if (typeof variable === "object") {
         for (let key in variable) {
             try {
