@@ -205,6 +205,13 @@ app.delete("/messages/:messageId", async (req, res) => {
 app.put("/messages/:messageId", async (req, res) => {
     const { messageId } = req.params;
     const { user } = req.headers;
+    
+    const userExists = await db.collection("users").findOne({ name: user });
+
+    if (!userExists) {
+        res.sendStatus(422);
+        return;
+    }
 
     const editedMessage = {
         ...req.body,
