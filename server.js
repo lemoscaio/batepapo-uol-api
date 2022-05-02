@@ -1,5 +1,5 @@
 import express from "express";
-import { MongoClient } from "mongodb";
+import { MongoClient, ObjectId } from "mongodb";
 import cors from "cors";
 import Joi from "joi";
 import dotenv from "dotenv";
@@ -44,7 +44,7 @@ app.get("/participants", async (req, res) => {
         const users = await db.collection("users").find().toArray();
         res.send(users);
     } catch (error) {
-        res.send(500);
+        res.sendStatus(500);
     }
 });
 
@@ -135,7 +135,7 @@ app.get("/messages", async (req, res) => {
 
 app.post("/messages", async (req, res) => {
     const { user } = req.headers;
-    
+
     const userExists = await db.collection("users").findOne({ name: user });
 
     if (!userExists) {
@@ -165,6 +165,43 @@ app.post("/messages", async (req, res) => {
         res.sendStatus(500);
     }
 });
+
+app.delete("/messages/:messageId", async (req, res) => {
+    const { messageId } = req.params;
+    const { user } = req.headers;
+
+    let message;
+    try {
+        message = await db
+            .collection("messages")
+            .findOne({ _id: new ObjectId(messageId) });
+    } catch (err) {
+        res.sendStatus(404);
+        return;
+    }
+
+    if (message.from !== user) {
+        res.sendStatus(401);
+        return;
+    }
+
+    try {
+        const deletedMessage = await db
+            .collection("messages")
+            .deleteOne({ _id: new ObjectId(messageId) });
+
+        if (deletedMessage.deletedCount === 1) {
+            res.sendStatus(200);
+            return;
+        } else {
+            res.sendStatus(404);
+            return;
+        }
+    } catch (err) {
+        res.sendStatus(500);
+    }
+});
+
 // STATUS ROUTE
 
 app.post("/status", async (req, res) => {
@@ -184,7 +221,7 @@ app.post("/status", async (req, res) => {
         { $set: { lastStatus: Date.now() } }
     );
 
-    res.send(200);
+    res.sendStatus(200);
 });
 
 // FUNCTIONS
