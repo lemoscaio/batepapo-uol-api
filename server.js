@@ -4,7 +4,6 @@ import cors from "cors";
 import Joi from "joi";
 import dotenv from "dotenv";
 import dayjs from "dayjs";
-import { strict as assert } from "assert";
 import { stripHtml } from "string-strip-html";
 dotenv.config();
 
