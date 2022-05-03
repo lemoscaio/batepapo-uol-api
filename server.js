@@ -177,13 +177,27 @@ app.delete("/messages/:messageId", async (req, res) => {
     const { messageId } = cleanHTML(req.params);
     const { user } = cleanHTML(req.headers);
 
+    const isIdValid = ObjectId.isValid(messageId);
+    if (!isIdValid) {
+        res.sendStatus(404);
+        return;
+    }
+
     let message;
+
     try {
         message = await db
             .collection("messages")
             .findOne({ _id: new ObjectId(messageId) });
     } catch (err) {
         res.sendStatus(404);
+        return;
+    }
+
+    if (!message) {
+        res.sendStatus(404);
+        console.log("deu ruim aqui");
+
         return;
     }
 
@@ -212,6 +226,12 @@ app.delete("/messages/:messageId", async (req, res) => {
 app.put("/messages/:messageId", async (req, res) => {
     const { messageId } = cleanHTML(req.params);
     const { user } = cleanHTML(req.headers);
+
+    const isIdValid = ObjectId.isValid(messageId);
+    if (!isIdValid) {
+        res.sendStatus(404);
+        return;
+    }
 
     const userExists = await db.collection("users").findOne({ name: user });
 
