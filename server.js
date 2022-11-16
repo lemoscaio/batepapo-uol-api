@@ -13,10 +13,15 @@ app.use(express.json())
 
 // CONNECTING MONGODB
 const mongoClient = new MongoClient(process.env.MONGO_URI)
+
 let db
-mongoClient.connect().then(() => {
-    db = mongoClient.db(process.env.DATABASE)
-})
+mongoClient
+    .connect()
+    .then((res) => {
+        console.log("Connected to database")
+        db = mongoClient.db(process.env.DATABASE)
+    })
+    .catch((err) => console.log("err", err))
 
 // SCHEMAS
 const newParticipantSchema = Joi.object({
@@ -336,8 +341,8 @@ app.post("/status", async (req, res) => {
 ;(function checkActiveUsers() {
     setInterval(async () => {
         await db
-            .collection("users")
-            .find()
+            ?.collection("users")
+            ?.find()
             .forEach(async (user) => {
                 if (Date.now() - user.lastStatus >= 10000) {
                     const deletedUser = await db.collection("users").deleteOne({
@@ -382,6 +387,6 @@ function cleanHTML(variable) {
 
 // STARTING SERVER
 
-app.listen(process.env.PORT, () => {
-    console.log("Server running on port", process.env.PORT)
+app.listen(process.env.PORT || 4000, () => {
+    console.log("Server running on port", process.env.PORT || 4000)
 })
