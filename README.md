@@ -173,7 +173,7 @@ It was the 12ᵗʰ project of the Driven Full Stack Bootcamp.
 * Edit message
 
   ```http
-  DELETE /messages/{messageId}
+  PUT /messages/{messageId}
   ```
 
   #### Request body:
@@ -192,7 +192,7 @@ It was the 12ᵗʰ project of the Driven Full Stack Bootcamp.
 
   | Parameter   | description                            |
   | :---------- | :------------------------------------- |
-  | `messageId` | **Required** - ID of message to delete |
+  | `messageId` | **Required** - ID of message to edit |
 
   #### Headers:
 
